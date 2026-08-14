@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { FilmEntity } from './entities/film.entity';
 import { FilmsRepository } from './films.repository';
-import { Film } from './films.schema';
 import { FilmsService } from './films.service';
 
 describe('FilmsService', () => {
@@ -28,7 +28,7 @@ describe('FilmsService', () => {
   });
 
   it('возвращает список фильмов без расписания', async () => {
-    const film: Film = {
+    const film: FilmEntity = {
       id: '0e33c7f6-27a7-4aa0-8e61-65d7e5effecf',
       rating: 8,
       director: 'Режиссёр',

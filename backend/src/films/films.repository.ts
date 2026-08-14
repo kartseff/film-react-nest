@@ -1,79 +1,25 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Film, FilmDocument, FilmSchedule } from './films.schema';
+import { FilmEntity } from './entities/film.entity';
+import { ScheduleEntity } from './entities/schedule.entity';
 
-@Injectable()
-export class FilmsRepository {
-  constructor(
-    @InjectModel(Film.name)
-    private readonly filmModel: Model<FilmDocument>,
-  ) {}
+export abstract class FilmsRepository {
+  abstract findAll(): Promise<FilmEntity[]>;
 
-  findAll(): Promise<Film[]> {
-    return this.filmModel.find().lean<Film[]>().exec();
-  }
+  abstract findScheduleByFilmId(id: string): Promise<ScheduleEntity[] | null>;
 
-  async findScheduleByFilmId(id: string): Promise<FilmSchedule[] | null> {
-    const film = await this.filmModel
-      .findOne({ id })
-      .select({ schedule: 1, _id: 0 })
-      .lean<Pick<Film, 'schedule'>>()
-      .exec();
-
-    return film?.schedule ?? null;
-  }
-
-  async findSession(
+  abstract findSession(
     filmId: string,
     sessionId: string,
-  ): Promise<FilmSchedule | null> {
-    const film = await this.filmModel
-      .findOne({ id: filmId, 'schedule.id': sessionId })
-      .select({ schedule: { $elemMatch: { id: sessionId } }, _id: 0 })
-      .lean<Pick<Film, 'schedule'>>()
-      .exec();
+  ): Promise<ScheduleEntity | null>;
 
-    return film?.schedule[0] ?? null;
-  }
-
-  async reserveSeats(
+  abstract reserveSeats(
     filmId: string,
     sessionId: string,
     places: string[],
-  ): Promise<boolean> {
-    const result = await this.filmModel.updateOne(
-      {
-        id: filmId,
-        schedule: {
-          $elemMatch: {
-            id: sessionId,
-            taken: { $nin: places },
-          },
-        },
-      },
-      {
-        $addToSet: {
-          'schedule.$.taken': { $each: places },
-        },
-      },
-    );
+  ): Promise<boolean>;
 
-    return result.modifiedCount === 1;
-  }
-
-  async releaseSeats(
+  abstract releaseSeats(
     filmId: string,
     sessionId: string,
     places: string[],
-  ): Promise<void> {
-    await this.filmModel.updateOne(
-      { id: filmId, 'schedule.id': sessionId },
-      {
-        $pull: {
-          'schedule.$.taken': { $in: places },
-        },
-      },
-    );
-  }
+  ): Promise<void>;
 }

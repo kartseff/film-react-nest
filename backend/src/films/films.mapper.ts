@@ -1,9 +1,10 @@
 import { FilmDto } from './dto/film.dto';
 import { ScheduleDto } from './dto/schedule.dto';
-import { Film, FilmSchedule } from './films.schema';
+import { FilmEntity } from './entities/film.entity';
+import { ScheduleEntity } from './entities/schedule.entity';
 
 export class FilmsMapper {
-  static toFilmDto(film: Film): FilmDto {
+  static toFilmDto(film: FilmEntity): FilmDto {
     return {
       id: film.id,
       rating: film.rating,
@@ -17,7 +18,7 @@ export class FilmsMapper {
     };
   }
 
-  static toScheduleDto(schedule: FilmSchedule): ScheduleDto {
+  static toScheduleDto(schedule: ScheduleEntity): ScheduleDto {
     return {
       id: schedule.id,
       daytime: schedule.daytime,

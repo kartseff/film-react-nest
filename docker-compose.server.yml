@@ -1,0 +1,81 @@
+services:
+  backend:
+    image: ghcr.io/${GHCR_OWNER:-your-github-login}/film-react-nest-backend:latest
+    pull_policy: always
+    container_name: film-backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_DRIVER: ${DATABASE_DRIVER:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgres://prac:password@database:5432/prac}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-prac}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-password}
+      PORT: ${PORT:-3000}
+      LOGGER: ${LOGGER:-JSON}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - internal
+      - webnet
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER:-your-github-login}/film-react-nest-frontend:latest
+    pull_policy: always
+    container_name: film-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - webnet
+    restart: unless-stopped
+
+  database:
+    image: postgres:16-alpine
+    container_name: film-database
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-prac}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-prac}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prac} -d ${POSTGRES_DB:-prac}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - database_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: film-pgadmin
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - database
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - internal
+      - webnet
+    restart: unless-stopped
+
+volumes:
+  database_data:
+  pgadmin_data:
+
+networks:
+  internal:
+    internal: true
+  webnet:

@@ -1,3 +1,4 @@
+-- Test schedule data for local and server PostgreSQL initialization.
 INSERT INTO schedules("daytime","filmId","hall","id","price","rows","seats","taken") VALUES('2024-06-28T10:00:53+03:00','0e33c7f6-27a7-4aa0-8e61-65d7e5effecf',0,'f2e429b0-685d-41f8-a8cd-1d8cb63b99ce',350,5,10,'');
 INSERT INTO schedules("daytime","filmId","hall","id","price","rows","seats","taken") VALUES('2024-06-28T14:00:53+03:00','0e33c7f6-27a7-4aa0-8e61-65d7e5effecf',1,'5beec101-acbb-4158-adc6-d855716b44a8',350,5,10,'');
 INSERT INTO schedules("daytime","filmId","hall","id","price","rows","seats","taken") VALUES('2024-06-28T16:00:53+03:00','0e33c7f6-27a7-4aa0-8e61-65d7e5effecf',2,'89ee32f3-8164-40a6-b237-f4d492450250',350,5,10,'');

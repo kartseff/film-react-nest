@@ -1,36 +1,150 @@
 # FILM!
 
-## Установка
+Сервис покупки билетов в кино: React-фронтенд, NestJS API и PostgreSQL.
+Приложение и API публикуются через nginx.
 
-### MongoDB
+## Развёрнутое приложение
 
-Установите MongoDB скачав дистрибутив с официального сайта или с помощью пакетного менеджера вашей ОС. Также можно воспользоваться Docker (см. ветку `feat/docker`.
+[http://kartdomain.nomorepartiessite.ru](http://kartdomain.nomorepartiessite.ru)
 
-Выполните скрипт `test/mongodb_initial_stub.js` в консоли `mongo`.
+API доступно с тем же origin по пути `/api/afisha`, статические материалы — по пути `/content/afisha`.
 
-### Бэкенд
+## Состав проекта
 
-Перейдите в папку с исходным кодом бэкенда
+- `frontend` — SPA на React и Vite;
+- `backend` — REST API на NestJS;
+- `nginx` — production-сборка фронтенда, SPA fallback и reverse proxy;
+- `backend/test` — SQL-скрипты создания и наполнения PostgreSQL;
+- `docker-compose.yml` — локальная сборка и запуск всего приложения;
+- `docker-compose.server.yml` — запуск опубликованных образов из GHCR;
+- `.github/workflows` — проверки и публикация Docker-образов.
 
-`cd backend`
+## Переменные окружения
 
-Установите зависимости (точно такие же, как в package-lock.json) помощью команд
+Для Docker Compose создайте корневой `.env` из примера:
 
-`npm ci` или `yarn install --frozen-lockfile`
+```bash
+cp .env.example .env
+```
 
-Создайте `.env` файл из примера `.env.example`, в нём укажите:
+Перед запуском замените демонстрационные пароли. Значения пользователя, пароля и базы в `DATABASE_URL` должны совпадать с `POSTGRES_USER`, `POSTGRES_PASSWORD` и `POSTGRES_DB`.
 
-* `DATABASE_DRIVER` - тип драйвера СУБД - в нашем случае это `mongodb` 
-* `DATABASE_URL` - адрес СУБД MongoDB, например `mongodb://127.0.0.1:27017/practicum`.  
+Переменная `LOGGER` выбирает формат серверных логов:
 
-MongoDB должна быть установлена и запущена.
+- `DEV` — стандартный цветной логгер NestJS;
+- `JSON` — JSON-записи для машинной обработки;
+- `TSKV` — плоские tab-separated key-value записи.
 
-Запустите бэкенд:
+Для запуска бэкенда без Docker используйте `backend/.env.example`, для локального Vite-сервера — `frontend/.env.example`.
 
-`npm start:debug`
+## Локальная разработка
 
-Для проверки отправьте тестовый запрос с помощью Postman или `curl`.
+Бэкенд:
 
+```bash
+cd backend
+cp .env.example .env
+npm ci
+npm run start:dev
+```
 
+Фронтенд в другом терминале:
 
+```bash
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
 
+## Проверки
+
+```bash
+cd backend
+npm ci
+npm run format:check
+npm run lint
+npm test -- --runInBand
+npm run build
+
+cd ../frontend
+npm ci
+npm run lint
+npm run build
+```
+
+## Запуск в Docker
+
+Из корня репозитория:
+
+```bash
+cp .env.example .env
+docker compose config
+docker compose up -d --build
+docker compose ps
+```
+
+После запуска доступны:
+
+- приложение — `http://localhost`;
+- pgAdmin — `http://localhost:8080`.
+
+При первом создании volume PostgreSQL автоматически выполняет `prac.init.sql`, `prac.films.sql` и `prac schedules.sql`. Повторный запуск не перезаписывает существующую базу.
+
+Остановка приложения:
+
+```bash
+docker compose down
+```
+
+## Публикация образов
+
+Workflow `.github/workflows/publish.yml` при push в `main` проверяет оба приложения, собирает production-образы и публикует теги `latest` и SHA коммита:
+
+- `ghcr.io/kartseff/film-react-nest-backend`;
+- `ghcr.io/kartseff/film-react-nest-frontend`.
+
+Для публикации используется автоматически созданный `GITHUB_TOKEN` с правом `packages: write`.
+
+## Запуск на сервере
+
+Скопируйте на сервер `docker-compose.server.yml` и подготовленный `.env`, затем выполните:
+
+```bash
+docker compose -f docker-compose.server.yml pull
+docker compose -f docker-compose.server.yml up -d
+docker compose -f docker-compose.server.yml ps
+```
+
+Если GHCR-пакеты приватные, перед `pull` авторизуйтесь с Personal Access Token, имеющим право `read:packages`:
+
+```bash
+docker login ghcr.io -u <github-login>
+```
+
+Серверный Compose сохраняет данные PostgreSQL и pgAdmin в именованных volumes.
+Начальные SQL-файлы в серверный Compose намеренно не монтируются. Скопируйте их
+на сервер и выполните по одному разу в таком порядке:
+
+1. `backend/test/prac.init.sql`;
+2. `backend/test/prac.films.sql`;
+3. `backend/test/prac.schedules.sql`.
+
+Например, находясь рядом с SQL-файлами на сервере:
+
+```bash
+docker compose -f docker-compose.server.yml exec -T database \
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  < prac.init.sql
+docker compose -f docker-compose.server.yml exec -T database \
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  < prac.films.sql
+docker compose -f docker-compose.server.yml exec -T database \
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+  < prac.schedules.sql
+```
+
+pgAdmin в production привязан только к `127.0.0.1:8080`. При необходимости
+откройте SSH-туннель `ssh -L 8080:127.0.0.1:8080 <user>@<server-ip>` и перейдите
+на локальный адрес `http://localhost:8080`. В подключении pgAdmin укажите host
+`database`, port `5432` и значения `POSTGRES_*` из серверного `.env`.

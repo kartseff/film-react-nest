@@ -5,30 +5,30 @@ import { stringArrayTransformer } from './string-array.transformer';
 @Entity('schedules')
 export class ScheduleEntity {
   @PrimaryColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column('varchar')
-  daytime: string;
+  daytime!: string;
 
   @Column('integer')
-  hall: number;
+  hall!: number;
 
   @Column('integer')
-  rows: number;
+  rows!: number;
 
   @Column('integer')
-  seats: number;
+  seats!: number;
 
   @Column('double precision')
-  price: number;
+  price!: number;
 
   @Column('text', { transformer: stringArrayTransformer })
-  taken: string[];
+  taken!: string[];
 
   @Column('uuid')
-  filmId: string;
+  filmId!: string;
 
   @ManyToOne(() => FilmEntity, (film) => film.schedule)
   @JoinColumn({ name: 'filmId' })
-  film: FilmEntity;
+  film!: FilmEntity;
 }

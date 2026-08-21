@@ -5,32 +5,32 @@ import { stringArrayTransformer } from './string-array.transformer';
 @Entity('films')
 export class FilmEntity {
   @PrimaryColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column('double precision')
-  rating: number;
+  rating!: number;
 
   @Column('varchar')
-  director: string;
+  director!: string;
 
   @Column('text', { transformer: stringArrayTransformer })
-  tags: string[];
+  tags!: string[];
 
   @Column('varchar')
-  image: string;
+  image!: string;
 
   @Column('varchar')
-  cover: string;
+  cover!: string;
 
   @Column('varchar')
-  title: string;
+  title!: string;
 
   @Column('varchar')
-  about: string;
+  about!: string;
 
   @Column('varchar')
-  description: string;
+  description!: string;
 
   @OneToMany(() => ScheduleEntity, (schedule) => schedule.film)
-  schedule: ScheduleEntity[];
+  schedule!: ScheduleEntity[];
 }

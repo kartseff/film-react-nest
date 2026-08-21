@@ -15,10 +15,10 @@ import {
 
 export class TicketDto {
   @IsUUID('4', { message: 'Некорректный идентификатор фильма' })
-  film: string;
+  film!: string;
 
   @IsUUID('4', { message: 'Некорректный идентификатор сеанса' })
-  session: string;
+  session!: string;
 
   @IsOptional()
   @IsDateString({}, { message: 'Некорректная дата сеанса' })
@@ -27,12 +27,12 @@ export class TicketDto {
   @Type(() => Number)
   @IsInt({ message: 'Номер ряда должен быть целым числом' })
   @Min(1, { message: 'Номер ряда должен быть больше нуля' })
-  row: number;
+  row!: number;
 
   @Type(() => Number)
   @IsInt({ message: 'Номер места должен быть целым числом' })
   @Min(1, { message: 'Номер места должен быть больше нуля' })
-  seat: number;
+  seat!: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -54,5 +54,5 @@ export class CreateOrderDto {
   @ArrayNotEmpty({ message: 'Добавьте хотя бы один билет' })
   @ValidateNested({ each: true })
   @Type(() => TicketDto)
-  tickets: TicketDto[];
+  tickets!: TicketDto[];
 }
